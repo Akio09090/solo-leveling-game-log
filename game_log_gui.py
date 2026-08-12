@@ -34,26 +34,33 @@ STATUSES = [STATUS_PLAYING, STATUS_COMPLETED, STATUS_BACKLOG]
 RANKS = ["E", "D", "C", "B", "A", "S", "National Level"]
 
 DEFAULT_THEME = {
-    "bg": "#0a0e1a",
-    "panel_bg": "#0f1526",
-    "accent": "#4da6ff",
-    "text": "#d6e4ff",
-    "subtext": "#7f93b8",
-    "border": "#2a3a5c",
-    "success": "#33e08a",
+    "bg": "#05070d",
+    "panel_bg": "#0b0f1a",
+    "panel_bg_alt": "#0f1424",
+    "accent": "#00e5ff",
+    "accent2": "#ff2fd0",
+    "text": "#e4f4ff",
+    "subtext": "#5c7ba0",
+    "border": "#16243d",
+    "success": "#39ff9e",
+    "danger": "#ff3860",
     "font_family": "Consolas",
     "font_size": 11,
 }
 
 THEME_PRESETS = {
-    "Shadow Monarch (Blue)": {"bg": "#0a0e1a", "panel_bg": "#0f1526", "accent": "#4da6ff",
-                               "text": "#d6e4ff", "subtext": "#7f93b8", "border": "#2a3a5c", "success": "#33e08a"},
-    "Red Gate (Crimson)": {"bg": "#170a0a", "panel_bg": "#1f0f0f", "accent": "#ff4d4d",
-                            "text": "#ffdede", "subtext": "#b87f7f", "border": "#5c2a2a", "success": "#ffb84d"},
-    "Guild Gold": {"bg": "#141005", "panel_bg": "#1c1608", "accent": "#f2c14e",
-                   "text": "#fff3d6", "subtext": "#b8a97f", "border": "#5c4d2a", "success": "#8be07a"},
-    "Hunter Green": {"bg": "#08130f", "panel_bg": "#0d1c16", "accent": "#3ee08a",
-                     "text": "#d6ffe9", "subtext": "#7fb897", "border": "#2a5c42", "success": "#7ad1ff"},
+    "Neon Cyan": {"bg": "#05070d", "panel_bg": "#0b0f1a", "panel_bg_alt": "#0f1424",
+                  "accent": "#00e5ff", "accent2": "#ff2fd0", "text": "#e4f4ff",
+                  "subtext": "#5c7ba0", "border": "#16243d", "success": "#39ff9e", "danger": "#ff3860"},
+    "Red Gate (Crimson)": {"bg": "#0d0507", "panel_bg": "#1a0b0f", "panel_bg_alt": "#1f0f14",
+                            "accent": "#ff2f5e", "accent2": "#ff8a00", "text": "#ffe4ec",
+                            "subtext": "#a05c72", "border": "#3d1624", "success": "#ffb84d", "danger": "#ff3860"},
+    "Guild Gold": {"bg": "#0d0a03", "panel_bg": "#1a1408", "panel_bg_alt": "#1f180a",
+                   "accent": "#ffcc33", "accent2": "#ff8a00", "text": "#fff3d6",
+                   "subtext": "#a08f5c", "border": "#3d3216", "success": "#8be07a", "danger": "#ff3860"},
+    "Matrix Green": {"bg": "#040d08", "panel_bg": "#081a0f", "panel_bg_alt": "#0a1f13",
+                      "accent": "#39ff9e", "accent2": "#00e5ff", "text": "#d6ffe9",
+                      "subtext": "#5ca078", "border": "#163d26", "success": "#39ff9e", "danger": "#ff3860"},
 }
 
 
@@ -97,6 +104,8 @@ def load_settings(username):
     s = load_json(path, {})
     theme = dict(DEFAULT_THEME)
     theme.update(s.get("theme", {}))
+    for k, v in DEFAULT_THEME.items():
+        theme.setdefault(k, v)
     return theme
 
 
@@ -168,8 +177,8 @@ class SystemApp:
         self.theme = load_settings(username)
 
         self.root.title(f"THE SYSTEM — Game Log  [{username}]")
-        self.root.geometry("980x620")
-        self.root.minsize(760, 480)
+        self.root.geometry("1040x660")
+        self.root.minsize(800, 520)
 
         self.apply_root_theme()
         self.build_menu_bar()
@@ -186,38 +195,120 @@ class SystemApp:
         except tk.TclError:
             pass
 
-        font_main = (t["font_family"], t["font_size"])
-        font_bold = (t["font_family"], t["font_size"], "bold")
+        base = t["font_family"]
+        size = t["font_size"]
+        font_main = (base, size)
+        font_bold = (base, size, "bold")
+        font_mono_small = (base, size - 2)
+        font_label = (base, size - 1, "bold")
 
+        # --- base surfaces ---
         self.style.configure("TFrame", background=t["panel_bg"])
         self.style.configure("Root.TFrame", background=t["bg"])
+        self.style.configure("Card.TFrame", background=t["panel_bg_alt"])
         self.style.configure("TLabel", background=t["panel_bg"], foreground=t["text"], font=font_main)
+
+        # --- headers / branding ---
         self.style.configure("Header.TLabel", background=t["bg"], foreground=t["accent"],
-                              font=(t["font_family"], t["font_size"] + 6, "bold"))
-        self.style.configure("Sub.TLabel", background=t["panel_bg"], foreground=t["subtext"], font=font_main)
+                              font=(base, size + 8, "bold"))
+        self.style.configure("SectionTitle.TLabel", background=t["panel_bg"], foreground=t["accent"],
+                              font=(base, size + 1, "bold"))
+        self.style.configure("Tag.TLabel", background=t["bg"], foreground=t["accent2"],
+                              font=(base, size - 3, "bold"))
+        self.style.configure("Sub.TLabel", background=t["panel_bg"], foreground=t["subtext"], font=font_mono_small)
+        self.style.configure("SubRoot.TLabel", background=t["bg"], foreground=t["subtext"], font=font_mono_small)
         self.style.configure("Stat.TLabel", background=t["panel_bg"], foreground=t["success"], font=font_bold)
+        self.style.configure("FieldLabel.TLabel", background=t["panel_bg"], foreground=t["subtext"],
+                              font=(base, size - 2, "bold"))
 
+        # --- buttons: flat neon-outline look, brighter on hover ---
         self.style.configure("TButton", background=t["accent"], foreground=t["bg"],
-                              font=font_bold, borderwidth=0, focuscolor=t["accent"], padding=6)
-        self.style.map("TButton", background=[("active", t["text"])])
+                              font=font_bold, borderwidth=0, focuscolor="", padding=(14, 9))
+        self.style.map("TButton",
+                        background=[("active", t["text"]), ("pressed", t["accent2"])],
+                        foreground=[("active", t["bg"]), ("pressed", t["bg"])])
 
-        self.style.configure("Treeview", background=t["panel_bg"], fieldbackground=t["panel_bg"],
-                              foreground=t["text"], font=font_main, rowheight=26, borderwidth=0)
+        self.style.configure("Ghost.TButton", background=t["panel_bg_alt"], foreground=t["accent"],
+                              font=font_bold, borderwidth=1, focuscolor="", padding=(12, 8))
+        self.style.map("Ghost.TButton",
+                        background=[("active", t["border"])],
+                        foreground=[("active", t["text"])])
+
+        self.style.configure("Danger.TButton", background=t["panel_bg_alt"], foreground=t["danger"],
+                              font=font_bold, borderwidth=1, focuscolor="", padding=(12, 8))
+        self.style.map("Danger.TButton",
+                        background=[("active", t["danger"])],
+                        foreground=[("active", t["bg"])])
+
+        # --- table ---
+        self.style.configure("Treeview", background=t["panel_bg_alt"], fieldbackground=t["panel_bg_alt"],
+                              foreground=t["text"], font=font_main, rowheight=30, borderwidth=0)
         self.style.configure("Treeview.Heading", background=t["border"], foreground=t["accent"],
-                              font=font_bold, relief="flat")
+                              font=(base, size - 1, "bold"), relief="flat", padding=(8, 8))
+        self.style.map("Treeview.Heading", background=[("active", t["border"])])
         self.style.map("Treeview", background=[("selected", t["accent"])],
                         foreground=[("selected", t["bg"])])
+        self.style.layout("Treeview", [("Treeview.treearea", {"sticky": "nswe"})])
 
+        # --- tabs: underline style instead of boxy ---
         self.style.configure("TNotebook", background=t["bg"], borderwidth=0)
-        self.style.configure("TNotebook.Tab", background=t["panel_bg"], foreground=t["subtext"],
-                              font=font_bold, padding=(14, 8))
+        self.style.configure("TNotebook.Tab", background=t["bg"], foreground=t["subtext"],
+                              font=(base, size, "bold"), padding=(18, 10), borderwidth=0)
         self.style.map("TNotebook.Tab",
-                        background=[("selected", t["accent"])],
-                        foreground=[("selected", t["bg"])])
+                        background=[("selected", t["bg"])],
+                        foreground=[("selected", t["accent"])])
+        self.style.layout("TNotebook.Tab", [
+            ("Notebook.tab", {"sticky": "nswe", "children": [
+                ("Notebook.padding", {"side": "top", "sticky": "nswe", "children": [
+                    ("Notebook.label", {"side": "top", "sticky": ""})
+                ]})
+            ]})
+        ])
 
-        self.style.configure("TEntry", fieldbackground=t["panel_bg"], foreground=t["text"],
-                              insertcolor=t["text"])
-        self.style.configure("TCombobox", fieldbackground=t["panel_bg"], foreground=t["text"])
+        # --- inputs ---
+        self.style.configure("TEntry", fieldbackground=t["panel_bg_alt"], foreground=t["text"],
+                              insertcolor=t["accent"], borderwidth=1, padding=8,
+                              bordercolor=t["border"], lightcolor=t["border"], darkcolor=t["border"])
+        self.style.map("TEntry",
+                        bordercolor=[("focus", t["accent"])],
+                        lightcolor=[("focus", t["accent"])])
+        self.style.configure("TCombobox", fieldbackground=t["panel_bg_alt"], background=t["panel_bg_alt"],
+                              foreground=t["text"], arrowcolor=t["accent"], borderwidth=1, padding=8,
+                              bordercolor=t["border"])
+        self.style.map("TCombobox", fieldbackground=[("readonly", t["panel_bg_alt"])],
+                        foreground=[("readonly", t["text"])])
+        self.style.configure("TSpinbox", fieldbackground=t["panel_bg_alt"], foreground=t["text"],
+                              arrowcolor=t["accent"], borderwidth=1, padding=6, bordercolor=t["border"])
+        self.style.configure("TScrollbar", background=t["panel_bg_alt"], troughcolor=t["bg"],
+                              bordercolor=t["bg"], arrowcolor=t["accent"])
+        self.style.configure("Vertical.TScrollbar", background=t["border"], troughcolor=t["bg"])
+        self.root.option_add("*TCombobox*Listbox.background", t["panel_bg_alt"])
+        self.root.option_add("*TCombobox*Listbox.foreground", t["text"])
+        self.root.option_add("*TCombobox*Listbox.selectBackground", t["accent"])
+        self.root.option_add("*TCombobox*Listbox.selectForeground", t["bg"])
+
+    # ---------- toplevel window styling helper ----------
+    def style_toplevel(self, win, w, h, title):
+        """Give a Toplevel a consistent dark cyber-styled frame + header bar."""
+        t = self.theme
+        win.configure(bg=t["bg"])
+        win.geometry(f"{w}x{h}")
+        win.title(title)
+
+        top_bar = tk.Frame(win, bg=t["bg"], height=4)
+        top_bar.pack(fill="x", side="top")
+        accent_line = tk.Frame(win, bg=t["accent"], height=2)
+        accent_line.pack(fill="x", side="top")
+
+        header = tk.Frame(win, bg=t["bg"])
+        header.pack(fill="x", padx=18, pady=(14, 4))
+        tk.Label(header, text=title.upper(), bg=t["bg"], fg=t["accent"],
+                  font=(t["font_family"], t["font_size"] + 2, "bold")).pack(side="left")
+
+        body = tk.Frame(win, bg=t["panel_bg"], highlightbackground=t["border"],
+                          highlightthickness=1)
+        body.pack(fill="both", expand=True, padx=18, pady=(4, 18))
+        return body
 
     def refresh_theme_everywhere(self):
         self.apply_root_theme()
@@ -230,21 +321,26 @@ class SystemApp:
 
     # ---------- MENU BAR ----------
     def build_menu_bar(self):
-        menubar = tk.Menu(self.root)
-        theme_menu = tk.Menu(menubar, tearoff=0)
+        t = self.theme
+        menubar = tk.Menu(self.root, bg=t["panel_bg"], fg=t["text"], activebackground=t["accent"],
+                           activeforeground=t["bg"], borderwidth=0, tearoff=0)
+        menu_kwargs = dict(bg=t["panel_bg"], fg=t["text"], activebackground=t["accent"],
+                            activeforeground=t["bg"], borderwidth=0, tearoff=0)
+
+        theme_menu = tk.Menu(menubar, **menu_kwargs)
         for name in THEME_PRESETS:
             theme_menu.add_command(label=name, command=lambda n=name: self.apply_preset(n))
         theme_menu.add_separator()
         theme_menu.add_command(label="Custom Theme Editor...", command=self.open_theme_editor)
         menubar.add_cascade(label="Theme", menu=theme_menu)
 
-        window_menu = tk.Menu(menubar, tearoff=0)
+        window_menu = tk.Menu(menubar, **menu_kwargs)
         window_menu.add_command(label="Status Window", command=self.open_status_window)
         window_menu.add_command(label="Add Game Window", command=self.open_add_window)
         window_menu.add_command(label="Player Settings Window", command=self.open_player_window)
         menubar.add_cascade(label="Windows", menu=window_menu)
 
-        account_menu = tk.Menu(menubar, tearoff=0)
+        account_menu = tk.Menu(menubar, **menu_kwargs)
         account_menu.add_command(label=f"Logged in as: {self.username}", state="disabled")
         account_menu.add_separator()
         account_menu.add_command(label="Log Out / Switch User", command=self.log_out)
@@ -268,64 +364,102 @@ class SystemApp:
     # ---------- MAIN WINDOW LAYOUT ----------
     def build_main_window(self):
         t = self.theme
-        header = ttk.Frame(self.root, style="Root.TFrame")
-        header.pack(fill="x", padx=16, pady=(14, 6))
-        ttk.Label(header, text="THE SYSTEM — GAME LOG", style="Header.TLabel").pack(side="left")
 
-        self.player_label = ttk.Label(header, text=self.player_summary_text(),
-                                       style="Header.TLabel")
-        self.player_label.configure(font=(t["font_family"], t["font_size"] + 1, "bold"))
-        self.player_label.pack(side="right")
+        # top accent line — thin neon strip across the very top of the window
+        tk.Frame(self.root, bg=t["accent"], height=2).pack(fill="x", side="top")
+
+        header = ttk.Frame(self.root, style="Root.TFrame")
+        header.pack(fill="x", padx=22, pady=(16, 2))
+        title_box = ttk.Frame(header, style="Root.TFrame")
+        title_box.pack(side="left")
+        ttk.Label(title_box, text="THE SYSTEM", style="Header.TLabel").pack(anchor="w")
+        ttk.Label(title_box, text="GAME LOG // QUEST TRACKER", style="SubRoot.TLabel").pack(anchor="w")
+
+        player_box = ttk.Frame(header, style="Root.TFrame")
+        player_box.pack(side="right")
+        self.player_name_label = ttk.Label(player_box, text="", style="Header.TLabel")
+        self.player_name_label.configure(font=(t["font_family"], t["font_size"] + 2, "bold"))
+        self.player_name_label.pack(anchor="e")
+        self.player_exp_label = ttk.Label(player_box, text="", style="SubRoot.TLabel")
+        self.player_exp_label.pack(anchor="e")
+
+        # divider
+        tk.Frame(self.root, bg=t["border"], height=1).pack(fill="x", padx=22, pady=(12, 12))
 
         btn_bar = ttk.Frame(self.root, style="Root.TFrame")
-        btn_bar.pack(fill="x", padx=16, pady=(0, 8))
-        ttk.Button(btn_bar, text="+ Register New Quest", command=self.open_add_window).pack(side="left", padx=(0, 6))
-        ttk.Button(btn_bar, text="Status Window", command=self.open_status_window).pack(side="left", padx=6)
-        ttk.Button(btn_bar, text="Update Selected", command=self.open_update_window).pack(side="left", padx=6)
-        ttk.Button(btn_bar, text="Delete Selected", command=self.delete_selected).pack(side="left", padx=6)
-        ttk.Button(btn_bar, text="Customize Theme", command=self.open_theme_editor).pack(side="right")
+        btn_bar.pack(fill="x", padx=22, pady=(0, 14))
+        ttk.Button(btn_bar, text="+  Register New Quest", command=self.open_add_window).pack(side="left")
+        ttk.Button(btn_bar, text="Update Selected", style="Ghost.TButton",
+                   command=self.open_update_window).pack(side="left", padx=(10, 0))
+        ttk.Button(btn_bar, text="Delete Selected", style="Danger.TButton",
+                   command=self.delete_selected).pack(side="left", padx=(10, 0))
+        ttk.Button(btn_bar, text="Status Window", style="Ghost.TButton",
+                   command=self.open_status_window).pack(side="right", padx=(10, 0))
+        ttk.Button(btn_bar, text="Customize Theme", style="Ghost.TButton",
+                   command=self.open_theme_editor).pack(side="right")
 
         # Tabs = separate filtered windows within main frame
-        self.notebook = ttk.Notebook(self.root)
-        self.notebook.pack(fill="both", expand=True, padx=16, pady=(0, 16))
+        notebook_wrap = ttk.Frame(self.root, style="Root.TFrame")
+        notebook_wrap.pack(fill="both", expand=True, padx=22, pady=(0, 20))
+        self.notebook = ttk.Notebook(notebook_wrap)
+        self.notebook.pack(fill="both", expand=True)
 
         self.trees = {}
         for status in ["All"] + STATUSES:
-            frame = ttk.Frame(self.notebook)
-            self.notebook.add(frame, text=status)
+            frame = ttk.Frame(self.notebook, style="Card.TFrame")
+            self.notebook.add(frame, text=f"  {status}  ")
             tree = self.build_tree(frame)
             self.trees[status] = tree
 
     def build_tree(self, parent):
+        t = self.theme
+        wrap = tk.Frame(parent, bg=t["panel_bg_alt"], highlightbackground=t["border"], highlightthickness=1)
+        wrap.pack(fill="both", expand=True, padx=6, pady=6)
+
         cols = ("id", "title", "rank", "genre", "platform", "hours", "rating", "added")
-        tree = ttk.Treeview(parent, columns=cols, show="headings", selectmode="browse")
-        headings = {"id": "ID", "title": "Title", "rank": "Rank", "genre": "Genre",
-                    "platform": "Platform", "hours": "Hours", "rating": "Rating", "added": "Added"}
-        widths = {"id": 40, "title": 240, "rank": 60, "genre": 120,
-                  "platform": 100, "hours": 60, "rating": 60, "added": 90}
+        tree = ttk.Treeview(wrap, columns=cols, show="headings", selectmode="browse")
+        headings = {"id": "ID", "title": "TITLE", "rank": "RANK", "genre": "GENRE",
+                    "platform": "PLATFORM", "hours": "HRS", "rating": "RTG", "added": "ADDED"}
+        widths = {"id": 44, "title": 260, "rank": 64, "genre": 130,
+                  "platform": 110, "hours": 60, "rating": 56, "added": 96}
         for c in cols:
             tree.heading(c, text=headings[c])
             tree.column(c, width=widths[c], anchor="w")
-        tree.pack(fill="both", expand=True, padx=4, pady=4)
+
+        vsb = ttk.Scrollbar(wrap, orient="vertical", command=tree.yview)
+        tree.configure(yscrollcommand=vsb.set)
+        vsb.pack(side="right", fill="y")
+        tree.pack(fill="both", expand=True, padx=(2, 0), pady=2)
+
+        tree.tag_configure("odd", background=t["panel_bg_alt"])
+        tree.tag_configure("even", background=t["panel_bg"])
+        tree.tag_configure("playing", foreground=t["accent"])
+        tree.tag_configure("completed", foreground=t["success"])
+        tree.tag_configure("backlog", foreground=t["subtext"])
         return tree
 
     def player_summary_text(self):
         p = self.data["player"]
         needed = p["level"] * 50
-        return f"{p['name']}   Lv.{p['level']}   EXP {p['exp']}/{needed}"
+        return p["name"], f"LV.{p['level']}   EXP {p['exp']}/{needed}"
 
     # ---------- TABLE REFRESH ----------
     def refresh_table(self):
+        status_tag = {STATUS_PLAYING: "playing", STATUS_COMPLETED: "completed", STATUS_BACKLOG: "backlog"}
         for status, tree in self.trees.items():
             for row in tree.get_children():
                 tree.delete(row)
             games = self.data["games"] if status == "All" else [g for g in self.data["games"] if g["status"] == status]
-            for g in games:
-                tree.insert("", "end", iid=str(g["id"]), values=(
+            for i, g in enumerate(games):
+                stripe = "even" if i % 2 == 0 else "odd"
+                tags = (stripe, status_tag.get(g["status"], ""))
+                tree.insert("", "end", iid=str(g["id"]), tags=tags, values=(
                     g["id"], g["title"], g["rank"], g.get("genre", ""), g.get("platform", ""),
                     g.get("hours", 0), g.get("rating", "") or "-", g.get("date_added", "")
                 ))
-        self.player_label.configure(text=self.player_summary_text())
+        name, exp_text = self.player_summary_text()
+        self.player_name_label.configure(text=name)
+        self.player_exp_label.configure(text=exp_text)
 
     def current_selected_id(self):
         tab = self.notebook.tab(self.notebook.select(), "text")
@@ -385,38 +519,28 @@ class SystemApp:
 
     # ---------- SEPARATE WINDOWS ----------
     def open_add_window(self):
-        t = self.theme
         win = tk.Toplevel(self.root)
-        win.title("Register New Quest")
-        win.configure(bg=t["panel_bg"])
-        win.geometry("420x520")
+        body = self.style_toplevel(win, 440, 600, "Register New Quest")
 
-        fields = {}
-
-        def row(label_text, widget_factory, default=""):
-            ttk.Label(win, text=label_text).pack(anchor="w", padx=16, pady=(10, 2))
+        def row(parent, label_text, widget_factory):
+            ttk.Label(parent, text=label_text.upper(), style="FieldLabel.TLabel").pack(anchor="w", padx=18, pady=(12, 3))
             widget = widget_factory()
-            widget.pack(fill="x", padx=16)
-            fields[label_text] = widget
+            widget.pack(fill="x", padx=18)
             return widget
 
-        title_entry = row("Game Title", lambda: ttk.Entry(win))
+        title_entry = row(body, "Game Title", lambda: ttk.Entry(body))
 
-        ttk.Label(win, text="Status").pack(anchor="w", padx=16, pady=(10, 2))
         status_var = tk.StringVar(value=STATUS_PLAYING)
-        status_box = ttk.Combobox(win, textvariable=status_var, values=STATUSES, state="readonly")
-        status_box.pack(fill="x", padx=16)
+        row(body, "Status", lambda: ttk.Combobox(body, textvariable=status_var, values=STATUSES, state="readonly"))
 
-        ttk.Label(win, text="Rank").pack(anchor="w", padx=16, pady=(10, 2))
         rank_var = tk.StringVar(value="E")
-        rank_box = ttk.Combobox(win, textvariable=rank_var, values=RANKS, state="readonly")
-        rank_box.pack(fill="x", padx=16)
+        row(body, "Rank", lambda: ttk.Combobox(body, textvariable=rank_var, values=RANKS, state="readonly"))
 
-        genre_entry = row("Genre", lambda: ttk.Entry(win))
-        platform_entry = row("Platform", lambda: ttk.Entry(win))
-        hours_entry = row("Hours Played", lambda: ttk.Entry(win))
-        rating_entry = row("Rating (1-10)", lambda: ttk.Entry(win))
-        notes_entry = row("Notes", lambda: ttk.Entry(win))
+        genre_entry = row(body, "Genre", lambda: ttk.Entry(body))
+        platform_entry = row(body, "Platform", lambda: ttk.Entry(body))
+        hours_entry = row(body, "Hours Played", lambda: ttk.Entry(body))
+        rating_entry = row(body, "Rating (1-10)", lambda: ttk.Entry(body))
+        notes_entry = row(body, "Notes", lambda: ttk.Entry(body))
 
         def submit():
             title = title_entry.get().strip()
@@ -440,7 +564,7 @@ class SystemApp:
             self.add_game(values)
             win.destroy()
 
-        ttk.Button(win, text="Register Quest", command=submit).pack(pady=18)
+        ttk.Button(body, text="Register Quest", command=submit).pack(pady=22)
 
     def open_update_window(self):
         gid = self.current_selected_id()
@@ -451,27 +575,22 @@ class SystemApp:
         if not game:
             return
 
-        t = self.theme
         win = tk.Toplevel(self.root)
-        win.title(f"Update — {game['title']}")
-        win.configure(bg=t["panel_bg"])
-        win.geometry("380x300")
+        body = self.style_toplevel(win, 400, 360, f"Update — {game['title']}")
 
-        ttk.Label(win, text=game["title"], style="Stat.TLabel").pack(pady=(16, 6))
-
-        ttk.Label(win, text="Status").pack(anchor="w", padx=16, pady=(10, 2))
+        ttk.Label(body, text="STATUS", style="FieldLabel.TLabel").pack(anchor="w", padx=18, pady=(14, 3))
         status_var = tk.StringVar(value=game["status"])
-        ttk.Combobox(win, textvariable=status_var, values=STATUSES, state="readonly").pack(fill="x", padx=16)
+        ttk.Combobox(body, textvariable=status_var, values=STATUSES, state="readonly").pack(fill="x", padx=18)
 
-        ttk.Label(win, text="Hours Played").pack(anchor="w", padx=16, pady=(10, 2))
-        hours_entry = ttk.Entry(win)
+        ttk.Label(body, text="HOURS PLAYED", style="FieldLabel.TLabel").pack(anchor="w", padx=18, pady=(12, 3))
+        hours_entry = ttk.Entry(body)
         hours_entry.insert(0, str(game.get("hours", 0)))
-        hours_entry.pack(fill="x", padx=16)
+        hours_entry.pack(fill="x", padx=18)
 
-        ttk.Label(win, text="Rating (1-10)").pack(anchor="w", padx=16, pady=(10, 2))
-        rating_entry = ttk.Entry(win)
+        ttk.Label(body, text="RATING (1-10)", style="FieldLabel.TLabel").pack(anchor="w", padx=18, pady=(12, 3))
+        rating_entry = ttk.Entry(body)
         rating_entry.insert(0, str(game.get("rating", "") or ""))
-        rating_entry.pack(fill="x", padx=16)
+        rating_entry.pack(fill="x", padx=18)
 
         def submit():
             old_status = game["status"]
@@ -492,15 +611,12 @@ class SystemApp:
             self.refresh_table()
             win.destroy()
 
-        ttk.Button(win, text="Save Update", command=submit).pack(pady=18)
+        ttk.Button(body, text="Save Update", command=submit).pack(pady=20)
 
     def open_status_window(self):
-        t = self.theme
         win = tk.Toplevel(self.root)
-        win.title("Status Window")
-        win.configure(bg=t["panel_bg"])
-        win.geometry("340x360")
         win.resizable(False, False)
+        body = self.style_toplevel(win, 360, 420, "Status Window")
 
         p = self.data["player"]
         needed = p["level"] * 50
@@ -510,31 +626,31 @@ class SystemApp:
         backlog = len([g for g in games if g["status"] == STATUS_BACKLOG])
         total_hours = sum(g.get("hours", 0) for g in games)
 
-        ttk.Label(win, text="STATUS WINDOW", style="Header.TLabel").pack(pady=(20, 10))
-        info = [
-            f"Name  : {p['name']}",
-            f"Level : {p['level']}",
-            f"EXP   : {p['exp']} / {needed}",
-            "",
-            f"Playing   : {playing}",
-            f"Completed : {completed}",
-            f"Backlog   : {backlog}",
-            f"Total Hours : {total_hours}",
-        ]
-        for line in info:
-            ttk.Label(win, text=line, style="Stat.TLabel" if ":" in line else "TLabel").pack(anchor="w", padx=30, pady=2)
+        t = self.theme
+
+        def stat_row(parent, label, value, value_style="Stat.TLabel"):
+            r = tk.Frame(parent, bg=t["panel_bg"])
+            r.pack(fill="x", padx=6, pady=3)
+            ttk.Label(r, text=label.upper(), style="FieldLabel.TLabel").pack(side="left")
+            ttk.Label(r, text=str(value), style=value_style).pack(side="right")
+
+        stat_row(body, "Player", p["name"])
+        stat_row(body, "Level", p["level"])
+        stat_row(body, "EXP", f"{p['exp']} / {needed}")
+        tk.Frame(body, bg=t["border"], height=1).pack(fill="x", padx=6, pady=10)
+        stat_row(body, "Playing", playing)
+        stat_row(body, "Completed", completed)
+        stat_row(body, "Backlog", backlog)
+        stat_row(body, "Total Hours", total_hours)
 
     def open_player_window(self):
-        t = self.theme
         win = tk.Toplevel(self.root)
-        win.title("Player Settings")
-        win.configure(bg=t["panel_bg"])
-        win.geometry("320x160")
+        body = self.style_toplevel(win, 340, 200, "Player Settings")
 
-        ttk.Label(win, text="Player Name").pack(anchor="w", padx=16, pady=(16, 2))
-        name_entry = ttk.Entry(win)
+        ttk.Label(body, text="PLAYER NAME", style="FieldLabel.TLabel").pack(anchor="w", padx=18, pady=(18, 3))
+        name_entry = ttk.Entry(body)
         name_entry.insert(0, self.data["player"]["name"])
-        name_entry.pack(fill="x", padx=16)
+        name_entry.pack(fill="x", padx=18)
 
         def submit():
             name = name_entry.get().strip()
@@ -544,24 +660,25 @@ class SystemApp:
                 self.refresh_table()
             win.destroy()
 
-        ttk.Button(win, text="Save", command=submit).pack(pady=20)
+        ttk.Button(body, text="Save", command=submit).pack(pady=22)
 
     # ---------- THEME EDITOR WINDOW ----------
     def open_theme_editor(self):
-        t = self.theme
         win = tk.Toplevel(self.root)
-        win.title("Customize Theme")
-        win.configure(bg=t["panel_bg"])
-        win.geometry("360x460")
+        t = self.theme
+        body = self.style_toplevel(win, 400, 560, "Customize Theme")
 
         color_fields = [
             ("bg", "Window Background"),
             ("panel_bg", "Panel Background"),
+            ("panel_bg_alt", "Panel Background (Alt)"),
             ("accent", "Accent Color"),
+            ("accent2", "Accent Color 2"),
             ("text", "Text Color"),
             ("subtext", "Subtext Color"),
             ("border", "Border Color"),
-            ("success", "Success/Highlight Color"),
+            ("success", "Success Color"),
+            ("danger", "Danger Color"),
         ]
 
         swatches = {}
@@ -573,19 +690,27 @@ class SystemApp:
                 self.theme[key] = color[1]
                 swatches[key].configure(bg=color[1])
 
+        canvas_wrap = tk.Frame(body, bg=t["panel_bg"])
+        canvas_wrap.pack(fill="both", expand=True, padx=4, pady=4)
+
         for key, label in color_fields:
-            row_frame = tk.Frame(win, bg=t["panel_bg"])
-            row_frame.pack(fill="x", padx=16, pady=6)
-            tk.Label(row_frame, text=label, bg=t["panel_bg"], fg=t["text"]).pack(side="left")
-            sw = tk.Label(row_frame, text="   ", bg=self.theme.get(key, "#ffffff"), relief="solid", bd=1)
+            row_frame = tk.Frame(canvas_wrap, bg=t["panel_bg"])
+            row_frame.pack(fill="x", padx=14, pady=5)
+            tk.Label(row_frame, text=label.upper(), bg=t["panel_bg"], fg=t["subtext"],
+                      font=(t["font_family"], t["font_size"] - 2, "bold")).pack(side="left")
+            ttk.Button(row_frame, text="Pick", style="Ghost.TButton",
+                       command=lambda k=key: pick_color(k)).pack(side="right", padx=(8, 0))
+            sw = tk.Label(row_frame, text="      ", bg=self.theme.get(key, "#ffffff"),
+                          relief="flat", highlightbackground=t["border"], highlightthickness=1)
             sw.pack(side="right")
             swatches[key] = sw
-            ttk.Button(row_frame, text="Pick", command=lambda k=key: pick_color(k)).pack(side="right", padx=8)
 
-        ttk.Label(win, text="Font Size").pack(anchor="w", padx=16, pady=(16, 2))
+        tk.Frame(body, bg=t["border"], height=1).pack(fill="x", padx=14, pady=10)
+
+        ttk.Label(body, text="FONT SIZE", style="FieldLabel.TLabel").pack(anchor="w", padx=14, pady=(0, 3))
         size_var = tk.IntVar(value=self.theme.get("font_size", 11))
-        size_spin = ttk.Spinbox(win, from_=8, to=20, textvariable=size_var)
-        size_spin.pack(fill="x", padx=16)
+        size_spin = ttk.Spinbox(body, from_=8, to=20, textvariable=size_var)
+        size_spin.pack(fill="x", padx=14)
 
         def apply_and_save():
             self.theme["font_size"] = size_var.get()
@@ -593,7 +718,7 @@ class SystemApp:
             win.destroy()
             self.refresh_theme_everywhere()
 
-        ttk.Button(win, text="Apply Theme", command=apply_and_save).pack(pady=20)
+        ttk.Button(body, text="Apply Theme", command=apply_and_save).pack(pady=20)
 
 
 # ---------------------------------------------------------------
@@ -611,8 +736,8 @@ class LoginScreen:
     def __init__(self, root):
         self.root = root
         self.root.title("THE SYSTEM — Sign In")
-        self.root.geometry("420x420")
-        self.root.minsize(380, 400)
+        self.root.geometry("440x480")
+        self.root.minsize(400, 460)
         t = LOGIN_THEME
         self.root.configure(bg=t["bg"])
 
@@ -622,40 +747,63 @@ class LoginScreen:
         except tk.TclError:
             pass
         style.configure("TFrame", background=t["bg"])
+        style.configure("Card.TFrame", background=t["panel_bg"])
         style.configure("TLabel", background=t["bg"], foreground=t["text"], font=(t["font_family"], 11))
+        style.configure("CardLabel.TLabel", background=t["panel_bg"], foreground=t["text"],
+                         font=(t["font_family"], 11))
+        style.configure("FieldLabel.TLabel", background=t["panel_bg"], foreground=t["subtext"],
+                         font=(t["font_family"], t["font_size"] - 2, "bold"))
         style.configure("Header.TLabel", background=t["bg"], foreground=t["accent"],
-                         font=(t["font_family"], 20, "bold"))
+                         font=(t["font_family"], 26, "bold"))
+        style.configure("SubRoot.TLabel", background=t["bg"], foreground=t["subtext"],
+                         font=(t["font_family"], 10))
         style.configure("TButton", background=t["accent"], foreground=t["bg"],
-                         font=(t["font_family"], 11, "bold"), padding=8)
-        style.map("TButton", background=[("active", t["text"])])
-        style.configure("TEntry", fieldbackground=t["panel_bg"], foreground=t["text"])
+                         font=(t["font_family"], 11, "bold"), borderwidth=0, focuscolor="", padding=(14, 10))
+        style.map("TButton", background=[("active", t["text"]), ("pressed", t["accent2"])])
+        style.configure("TEntry", fieldbackground=t["panel_bg_alt"], foreground=t["text"],
+                         insertcolor=t["accent"], borderwidth=1, padding=8,
+                         bordercolor=t["border"], lightcolor=t["border"], darkcolor=t["border"])
+        style.map("TEntry", bordercolor=[("focus", t["accent"])])
         style.configure("TNotebook", background=t["bg"], borderwidth=0)
-        style.configure("TNotebook.Tab", background=t["panel_bg"], foreground=t["subtext"],
-                         font=(t["font_family"], 10, "bold"), padding=(16, 8))
-        style.map("TNotebook.Tab", background=[("selected", t["accent"])], foreground=[("selected", t["bg"])])
+        style.configure("TNotebook.Tab", background=t["bg"], foreground=t["subtext"],
+                         font=(t["font_family"], 10, "bold"), padding=(18, 10), borderwidth=0)
+        style.map("TNotebook.Tab", background=[("selected", t["bg"])],
+                   foreground=[("selected", t["accent"])])
+        style.layout("TNotebook.Tab", [
+            ("Notebook.tab", {"sticky": "nswe", "children": [
+                ("Notebook.padding", {"side": "top", "sticky": "nswe", "children": [
+                    ("Notebook.label", {"side": "top", "sticky": ""})
+                ]})
+            ]})
+        ])
 
-        ttk.Label(root, text="THE SYSTEM", style="Header.TLabel").pack(pady=(30, 0))
-        ttk.Label(root, text='"Arise, Player."').pack(pady=(0, 20))
+        tk.Frame(root, bg=t["accent"], height=2).pack(fill="x", side="top")
 
-        notebook = ttk.Notebook(root)
-        notebook.pack(fill="both", expand=True, padx=24, pady=10)
+        ttk.Label(root, text="THE SYSTEM", style="Header.TLabel").pack(pady=(34, 0))
+        ttk.Label(root, text='"ARISE, PLAYER."', style="SubRoot.TLabel").pack(pady=(2, 24))
 
-        login_tab = ttk.Frame(notebook)
-        register_tab = ttk.Frame(notebook)
-        notebook.add(login_tab, text="Log In")
-        notebook.add(register_tab, text="Create Account")
+        card = tk.Frame(root, bg=t["panel_bg"], highlightbackground=t["border"], highlightthickness=1)
+        card.pack(fill="both", expand=True, padx=28, pady=(0, 28))
+
+        notebook = ttk.Notebook(card)
+        notebook.pack(fill="both", expand=True, padx=4, pady=4)
+
+        login_tab = ttk.Frame(notebook, style="Card.TFrame")
+        register_tab = ttk.Frame(notebook, style="Card.TFrame")
+        notebook.add(login_tab, text="  LOG IN  ")
+        notebook.add(register_tab, text="  CREATE ACCOUNT  ")
 
         self.build_login_tab(login_tab)
         self.build_register_tab(register_tab)
 
     def build_login_tab(self, parent):
-        ttk.Label(parent, text="Username").pack(anchor="w", padx=20, pady=(24, 2))
+        ttk.Label(parent, text="USERNAME", style="FieldLabel.TLabel").pack(anchor="w", padx=22, pady=(26, 3))
         user_entry = ttk.Entry(parent)
-        user_entry.pack(fill="x", padx=20)
+        user_entry.pack(fill="x", padx=22)
 
-        ttk.Label(parent, text="Password").pack(anchor="w", padx=20, pady=(14, 2))
+        ttk.Label(parent, text="PASSWORD", style="FieldLabel.TLabel").pack(anchor="w", padx=22, pady=(16, 3))
         pass_entry = ttk.Entry(parent, show="*")
-        pass_entry.pack(fill="x", padx=20)
+        pass_entry.pack(fill="x", padx=22)
 
         def submit(event=None):
             username = user_entry.get().strip()
@@ -667,20 +815,20 @@ class LoginScreen:
                 messagebox.showerror("Login Failed", msg)
 
         pass_entry.bind("<Return>", submit)
-        ttk.Button(parent, text="Enter the System", command=submit).pack(pady=24)
+        ttk.Button(parent, text="ENTER THE SYSTEM", command=submit).pack(pady=28, padx=22, fill="x")
 
     def build_register_tab(self, parent):
-        ttk.Label(parent, text="Choose a Username").pack(anchor="w", padx=20, pady=(24, 2))
+        ttk.Label(parent, text="CHOOSE A USERNAME", style="FieldLabel.TLabel").pack(anchor="w", padx=22, pady=(26, 3))
         user_entry = ttk.Entry(parent)
-        user_entry.pack(fill="x", padx=20)
+        user_entry.pack(fill="x", padx=22)
 
-        ttk.Label(parent, text="Choose a Password (min 4 chars)").pack(anchor="w", padx=20, pady=(14, 2))
+        ttk.Label(parent, text="CHOOSE A PASSWORD (MIN 4 CHARS)", style="FieldLabel.TLabel").pack(anchor="w", padx=22, pady=(16, 3))
         pass_entry = ttk.Entry(parent, show="*")
-        pass_entry.pack(fill="x", padx=20)
+        pass_entry.pack(fill="x", padx=22)
 
-        ttk.Label(parent, text="Confirm Password").pack(anchor="w", padx=20, pady=(14, 2))
+        ttk.Label(parent, text="CONFIRM PASSWORD", style="FieldLabel.TLabel").pack(anchor="w", padx=22, pady=(16, 3))
         confirm_entry = ttk.Entry(parent, show="*")
-        confirm_entry.pack(fill="x", padx=20)
+        confirm_entry.pack(fill="x", padx=22)
 
         def submit(event=None):
             username = user_entry.get().strip()
@@ -697,13 +845,13 @@ class LoginScreen:
                 messagebox.showerror("Registration Failed", msg)
 
         confirm_entry.bind("<Return>", submit)
-        ttk.Button(parent, text="Register", command=submit).pack(pady=24)
+        ttk.Button(parent, text="REGISTER", command=submit).pack(pady=24, padx=22, fill="x")
 
     def launch_app(self, username):
         for widget in self.root.winfo_children():
             widget.destroy()
-        self.root.geometry("980x620")
-        self.root.minsize(760, 480)
+        self.root.geometry("1040x660")
+        self.root.minsize(800, 520)
         SystemApp(self.root, username)
 
 
